@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Print Layout Tool</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 PDF Print Layout Tool</h1>
+            <p class="subtitle">N-up imposition with duplex alignment</p>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section class="card">
+                <h2>1. Upload PDF</h2>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📁</div>
+                    <p>Drag & drop your PDF here</p>
+                    <p class="upload-hint">or click to browse (max 50 MB)</p>
+                    <input type="file" id="fileInput" accept=".pdf" hidden>
+                </div>
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <span id="fileName"></span>
+                    <button class="btn-remove" id="removeFile">✕</button>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section class="card">
+                <h2>2. Configure Layout</h2>
+                <div class="settings-grid">
+                    <div class="setting">
+                        <label for="gridRows">Rows</label>
+                        <select id="gridRows">
+                            <option value="2">2</option>
+                            <option value="3" selected>3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="setting">
+                        <label for="gridCols">Columns</label>
+                        <select id="gridCols">
+                            <option value="2">2</option>
+                            <option value="3" selected>3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="setting">
+                        <label for="paperSize">Paper Size</label>
+                        <select id="paperSize">
+                            <option value="A4" selected>A4</option>
+                            <option value="Letter">Letter</option>
+                            <option value="A3">A3</option>
+                            <option value="Legal">Legal</option>
+                        </select>
+                    </div>
+                    <div class="setting">
+                        <label for="margin">Margin (pt)</label>
+                        <input type="number" id="margin" value="10" min="0" max="100" step="1">
+                    </div>
+                </div>
+
+                <!-- Grid Preview -->
+                <div class="grid-preview-section">
+                    <h3>Layout Preview</h3>
+                    <div class="preview-container">
+                        <div class="preview-sheet">
+                            <div class="preview-label">Front</div>
+                            <div class="preview-grid" id="previewFront"></div>
+                        </div>
+                        <div class="preview-arrow">→</div>
+                        <div class="preview-sheet">
+                            <div class="preview-label">Back (reversed)</div>
+                            <div class="preview-grid" id="previewBack"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Process Section -->
+            <section class="card">
+                <h2>3. Generate</h2>
+                <button class="btn-primary" id="processBtn" disabled>
+                    Process PDF
+                </button>
+                <div class="progress-container" id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">Processing...</p>
+                </div>
+            </section>
+
+            <!-- Result Section -->
+            <section class="card" id="resultSection" style="display: none;">
+                <h2>4. Download</h2>
+                <div class="result-info">
+                    <p>Total sheets: <strong id="resultSheets"></strong></p>
+                    <p>Output pages: <strong id="resultPages"></strong></p>
+                </div>
+                <a class="btn-download" id="downloadBtn" href="#">
+                    ⬇ Download Imposed PDF
+                </a>
+            </section>
+        </main>
+
+        <footer>
+            <p>PDF Print Layout Tool — N-up printing with duplex alignment</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
