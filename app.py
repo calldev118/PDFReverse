@@ -21,7 +21,7 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "tmp", "output")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Track files for cleanup: {file_id: creation_timestamp}
+# Track files for cleanup: {file_id: {"timestamp": ..., "original_name": ...}}
 _file_registry = {}
 CLEANUP_AFTER_SEC = 600  # 10 minutes
 
@@ -30,8 +30,8 @@ def _cleanup_old_files():
     """Remove files older than CLEANUP_AFTER_SEC."""
     now = time.time()
     to_remove = []
-    for file_id, ts in _file_registry.items():
-        if now - ts > CLEANUP_AFTER_SEC:
+    for file_id, info in _file_registry.items():
+        if now - info["timestamp"] > CLEANUP_AFTER_SEC:
             to_remove.append(file_id)
 
     for file_id in to_remove:
@@ -110,7 +110,13 @@ def process_pdf():
     output_path = os.path.join(OUTPUT_DIR, output_filename)
 
     pdf_file.save(input_path)
-    _file_registry[file_id] = time.time()
+
+    # Store original filename (without .pdf extension) for download naming
+    original_name = os.path.splitext(pdf_file.filename)[0]
+    _file_registry[file_id] = {
+        "timestamp": time.time(),
+        "original_name": original_name,
+    }
 
     # Process
     try:
@@ -151,14 +157,23 @@ def download_pdf(file_id):
     if not os.path.exists(output_path):
         return jsonify({"error": "File not found or expired"}), 404
 
+    # Build download name from original filename
+    info = _file_registry.get(file_id)
+    if info and info.get("original_name"):
+        download_name = f"{info['original_name']}_imposed.pdf"
+    else:
+        download_name = "imposed_output.pdf"
+
     return send_file(
         output_path,
         mimetype="application/pdf",
         as_attachment=True,
-        download_name="imposed_output.pdf",
+        download_name=download_name,
     )
 
 
+# Start auto-cleanup timer on import
+_schedule_cleanup()
+
 if __name__ == "__main__":
-    _schedule_cleanup()
     app.run(debug=True, port=5000)

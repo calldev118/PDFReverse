@@ -1,11 +1,11 @@
 /**
- * PDF Print Layout Tool — Frontend Logic
- * Handles file upload, grid preview, processing, and download.
+ * PrintGrid — Frontend Logic
+ * Upload, grid preview with tabs, processing, and download.
  */
 (function () {
     "use strict";
 
-    // --- DOM Elements ---
+    // --- DOM ---
     const uploadZone = document.getElementById("uploadZone");
     const fileInput = document.getElementById("fileInput");
     const fileInfo = document.getElementById("fileInfo");
@@ -17,6 +17,9 @@
     const marginInput = document.getElementById("margin");
     const previewFront = document.getElementById("previewFront");
     const previewBack = document.getElementById("previewBack");
+    const previewCaption = document.getElementById("previewCaption");
+    const infoSlots = document.getElementById("infoSlots");
+    const infoPagesPerSheet = document.getElementById("infoPagesPerSheet");
     const processBtn = document.getElementById("processBtn");
     const progressContainer = document.getElementById("progressContainer");
     const progressFill = document.getElementById("progressFill");
@@ -27,8 +30,9 @@
     const downloadBtn = document.getElementById("downloadBtn");
 
     let selectedFile = null;
+    let activeSide = "front";
 
-    // --- Upload Handling ---
+    // --- Upload ---
     uploadZone.addEventListener("click", () => fileInput.click());
 
     uploadZone.addEventListener("dragover", (e) => {
@@ -50,18 +54,15 @@
     });
 
     fileInput.addEventListener("change", () => {
-        if (fileInput.files.length > 0) {
-            setFile(fileInput.files[0]);
-        }
+        if (fileInput.files.length > 0) setFile(fileInput.files[0]);
     });
 
-    removeFile.addEventListener("click", () => {
-        clearFile();
-    });
+    removeFile.addEventListener("click", clearFile);
 
     function setFile(file) {
         selectedFile = file;
-        fileName.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+        fileName.textContent = `${file.name} (${sizeMB} MB)`;
         fileInfo.style.display = "flex";
         uploadZone.style.display = "none";
         processBtn.disabled = false;
@@ -77,29 +78,42 @@
         resultSection.style.display = "none";
     }
 
-    // --- Grid Preview ---
+    // --- Preview Tabs ---
+    document.querySelectorAll(".preview-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+            document.querySelectorAll(".preview-tab").forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            activeSide = tab.dataset.side;
+
+            previewFront.style.display = activeSide === "front" ? "" : "none";
+            previewBack.style.display = activeSide === "back" ? "" : "none";
+            previewCaption.textContent =
+                activeSide === "back"
+                    ? "Each row is reversed for short-edge duplex"
+                    : "Pages arranged left-to-right, top-to-bottom";
+        });
+    });
+
+    // --- Preview Grid ---
     function updatePreview() {
         const rows = parseInt(gridRows.value);
         const cols = parseInt(gridCols.value);
-        const slotsPerSide = rows * cols;
+        const slots = rows * cols;
 
         previewFront.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
         previewBack.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-        // Build front pages: 1, 3, 5, 7... (odd positions)
         const frontPages = [];
         const backPages = [];
-        for (let i = 0; i < slotsPerSide; i++) {
+        for (let i = 0; i < slots; i++) {
             frontPages.push(i * 2 + 1);
             backPages.push(i * 2 + 2);
         }
 
-        // Build front grid HTML
         previewFront.innerHTML = frontPages
             .map((p) => `<div class="preview-cell">${p}</div>`)
             .join("");
 
-        // Build back grid with row reversal
         const backReversed = [];
         for (let r = 0; r < rows; r++) {
             const row = backPages.slice(r * cols, (r + 1) * cols);
@@ -110,12 +124,14 @@
         previewBack.innerHTML = backReversed
             .map((p) => `<div class="preview-cell">${p}</div>`)
             .join("");
+
+        // Info strip
+        infoSlots.textContent = `${rows}\u00d7${cols} = ${slots} pages/side`;
+        infoPagesPerSheet.textContent = `${slots * 2} pages/sheet`;
     }
 
     gridRows.addEventListener("change", updatePreview);
     gridCols.addEventListener("change", updatePreview);
-
-    // Initial preview
     updatePreview();
 
     // --- Process ---
@@ -123,7 +139,8 @@
         if (!selectedFile) return;
 
         processBtn.disabled = true;
-        progressContainer.style.display = "block";
+        processBtn.closest(".card").classList.add("processing");
+        progressContainer.style.display = "flex";
         resultSection.style.display = "none";
         progressFill.style.width = "10%";
         progressText.textContent = "Uploading...";
@@ -145,17 +162,13 @@
             });
 
             progressFill.style.width = "80%";
-
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || "Processing failed");
-            }
+            if (!response.ok) throw new Error(data.error || "Processing failed");
 
             progressFill.style.width = "100%";
             progressText.textContent = "Done!";
 
-            // Show result
             resultSheets.textContent = data.total_sheets;
             resultPages.textContent = data.output_pages;
             downloadBtn.href = data.download_url;
@@ -164,11 +177,13 @@
             setTimeout(() => {
                 progressContainer.style.display = "none";
                 processBtn.disabled = false;
-            }, 1000);
+                processBtn.closest(".card").classList.remove("processing");
+            }, 800);
         } catch (err) {
             progressFill.style.width = "0%";
             progressText.textContent = `Error: ${err.message}`;
             processBtn.disabled = false;
+            processBtn.closest(".card").classList.remove("processing");
 
             setTimeout(() => {
                 progressContainer.style.display = "none";

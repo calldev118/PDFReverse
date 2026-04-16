@@ -2,42 +2,35 @@
 
 import os
 import sys
+import time
 
-# Add project root
 sys.path.insert(0, os.path.dirname(__file__))
 
-from PyPDF2 import PdfWriter, PageObject
+from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from io import BytesIO
+import pikepdf
 
 
 def create_test_pdf(output_path, num_pages=20):
-    """Create a test PDF with numbered pages."""
-    writer = PdfWriter()
+    """Create a test PDF with numbered pages using reportlab."""
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
 
     for i in range(1, num_pages + 1):
-        buf = BytesIO()
-        c = canvas.Canvas(buf, pagesize=A4)
-        w, h = A4
-        # Draw page number large in center
         c.setFont("Helvetica-Bold", 72)
         c.drawCentredString(w / 2, h / 2, str(i))
-        # Draw border
         c.setStrokeColorRGB(0.3, 0.3, 0.3)
         c.rect(20, 20, w - 40, h - 40)
-        # Label
         c.setFont("Helvetica", 14)
         c.drawCentredString(w / 2, h / 2 - 60, f"Page {i} of {num_pages}")
-        c.save()
+        c.showPage()
 
-        buf.seek(0)
-        from PyPDF2 import PdfReader
-        reader = PdfReader(buf)
-        writer.add_page(reader.pages[0])
+    c.save()
 
     with open(output_path, "wb") as f:
-        writer.write(f)
+        f.write(buf.getvalue())
 
     print(f"Created test PDF: {output_path} ({num_pages} pages)")
 
@@ -49,10 +42,9 @@ def test_imposer():
     test_input = "/tmp/test_input.pdf"
     test_output = "/tmp/test_output.pdf"
 
-    # Create test PDF
     create_test_pdf(test_input, num_pages=20)
 
-    # Process it
+    start = time.perf_counter()
     result = create_imposed_pdf(
         input_pdf_path=test_input,
         output_pdf_path=test_output,
@@ -61,20 +53,20 @@ def test_imposer():
         paper_size="A4",
         margin=10,
     )
+    elapsed = time.perf_counter() - start
+
+    # Verify output
+    out_pdf = pikepdf.Pdf.open(test_output)
+    assert len(out_pdf.pages) == result["output_pages"], "Page count mismatch!"
+    out_pdf.close()
 
     print(f"\nImposition result:")
     print(f"  Total sheets: {result['total_sheets']}")
     print(f"  Output pages: {result['output_pages']}")
-    print(f"  Output file:  {result['output_path']}")
     print(f"  File size:    {os.path.getsize(test_output) / 1024:.1f} KB")
-    print(f"\n✅ End-to-end test passed!")
+    print(f"  Time:         {elapsed * 1000:.0f} ms")
+    print(f"\n  End-to-end test passed!")
 
 
 if __name__ == "__main__":
-    try:
-        import reportlab
-        test_imposer()
-    except ImportError:
-        print("reportlab not installed. Installing...")
-        os.system("pip install reportlab")
-        test_imposer()
+    test_imposer()

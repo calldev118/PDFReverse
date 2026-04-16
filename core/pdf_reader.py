@@ -1,29 +1,26 @@
 """
 PDF Reader module.
-Extracts individual pages from an uploaded PDF file.
+Extracts page info from an uploaded PDF file using pikepdf.
 """
 
-from PyPDF2 import PdfReader
+import pikepdf
 
 
 def extract_pages(pdf_path):
     """
-    Read a PDF file and return a list of page objects.
-    Each element is a PyPDF2 PageObject that can be placed onto a new PDF.
+    Read a PDF file and return page metadata.
     """
-    reader = PdfReader(pdf_path)
-    pages = list(reader.pages)
+    pdf = pikepdf.Pdf.open(pdf_path)
 
     return {
-        "pages": pages,
-        "total": len(pages),
-        "page_sizes": [_get_page_size(p) for p in pages],
+        "total": len(pdf.pages),
+        "page_sizes": [_get_page_size(p) for p in pdf.pages],
     }
 
 
 def _get_page_size(page):
     """Get the width and height of a page in points."""
-    box = page.mediabox
-    width = float(box.width)
-    height = float(box.height)
+    mbox = page.mediabox
+    width = float(mbox[2]) - float(mbox[0])
+    height = float(mbox[3]) - float(mbox[1])
     return {"width": width, "height": height}
