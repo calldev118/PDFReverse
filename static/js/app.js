@@ -31,6 +31,8 @@
 
     let selectedFile = null;
     let activeSide = "front";
+    let abortController = null;
+    const cancelBtn = document.getElementById("cancelBtn");
 
     // --- Upload ---
     uploadZone.addEventListener("click", () => fileInput.click());
@@ -134,9 +136,35 @@
     gridCols.addEventListener("change", updatePreview);
     updatePreview();
 
+    // --- Reset Layout ---
+    document.getElementById("resetLayout").addEventListener("click", () => {
+        gridRows.value = "3";
+        gridCols.value = "3";
+        paperSize.value = "A4";
+        marginInput.value = "10";
+        updatePreview();
+    });
+
+    // --- Cancel ---
+    function resetProcessingUI() {
+        progressFill.style.width = "0%";
+        progressContainer.style.display = "none";
+        processBtn.disabled = false;
+        processBtn.closest(".card").classList.remove("processing");
+    }
+
+    cancelBtn.addEventListener("click", () => {
+        if (abortController) {
+            abortController.abort();
+            abortController = null;
+        }
+    });
+
     // --- Process ---
     processBtn.addEventListener("click", async () => {
         if (!selectedFile) return;
+
+        abortController = new AbortController();
 
         processBtn.disabled = true;
         processBtn.closest(".card").classList.add("processing");
@@ -159,6 +187,7 @@
             const response = await fetch("/api/process", {
                 method: "POST",
                 body: formData,
+                signal: abortController.signal,
             });
 
             progressFill.style.width = "80%";
@@ -180,14 +209,17 @@
                 processBtn.closest(".card").classList.remove("processing");
             }, 800);
         } catch (err) {
-            progressFill.style.width = "0%";
-            progressText.textContent = `Error: ${err.message}`;
-            processBtn.disabled = false;
-            processBtn.closest(".card").classList.remove("processing");
-
-            setTimeout(() => {
-                progressContainer.style.display = "none";
-            }, 4000);
+            if (err.name === "AbortError") {
+                progressFill.style.width = "0%";
+                progressText.textContent = "Cancelled";
+                setTimeout(resetProcessingUI, 1200);
+            } else {
+                progressFill.style.width = "0%";
+                progressText.textContent = `Error: ${err.message}`;
+                setTimeout(resetProcessingUI, 4000);
+            }
+        } finally {
+            abortController = null;
         }
     });
 })();

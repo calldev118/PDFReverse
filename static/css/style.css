@@ -279,9 +279,15 @@ body {
 /* === Progress === */
 .progress-bar-container {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    gap: 6px;
     margin-top: 14px;
+}
+
+.progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .progress-track {
@@ -298,6 +304,48 @@ body {
     background: linear-gradient(90deg, var(--primary), var(--primary-light));
     border-radius: 3px;
     transition: width .4s ease;
+}
+
+.btn-reset-layout {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: .75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.btn-reset-layout:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: #eef2ff;
+}
+
+.btn-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .2s ease;
+    flex-shrink: 0;
+}
+
+.btn-cancel:hover {
+    background: #fee2e2;
+    color: #dc2626;
 }
 
 .progress-label {
