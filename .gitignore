@@ -3,4 +3,5 @@ tmp/output/
 tmp/uploads/
 __pycache__/
 *.db
-core/
+core/printgrid.db-shm
+core/printgrid.db-wal
