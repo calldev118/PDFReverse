@@ -66,10 +66,18 @@ def _render_grid_page(src_pdf, out_pdf, grid, grid_rows, grid_cols,
     """
     Render a single grid page (front or back).
     Uses pikepdf Form XObjects for fast, clean placement.
+    Draws a border and page number on each cell.
     """
     xobjects = pikepdf.Dictionary()
     content_parts = []
     xobj_idx = 0
+
+    # Built-in Helvetica font for page numbers (no embedding needed)
+    font_dict = pikepdf.Dictionary(
+        Type=pikepdf.Name.Font,
+        Subtype=pikepdf.Name.Type1,
+        BaseFont=pikepdf.Name.Helvetica,
+    )
 
     for row_i in range(grid_rows):
         for col_i in range(grid_cols):
@@ -99,9 +107,9 @@ def _render_grid_page(src_pdf, out_pdf, grid, grid_rows, grid_cols,
             tx = cell_x + offset_x
             ty = cell_y + offset_y
 
+            # --- Page content ---
             xobj = src_page.as_form_xobject()
             xobj_foreign = out_pdf.copy_foreign(xobj)
-
             name = f"Pg{xobj_idx}"
             xobjects[pikepdf.Name(f"/{name}")] = xobj_foreign
             xobj_idx += 1
@@ -110,12 +118,37 @@ def _render_grid_page(src_pdf, out_pdf, grid, grid_rows, grid_cols,
                 f"q {scale:.6f} 0 0 {scale:.6f} {tx:.4f} {ty:.4f} cm /{name} Do Q"
             )
 
+            # --- Border around scaled content ---
+            content_parts.append(
+                f"q 0.5 w 0.55 0.55 0.65 RG "
+                f"{tx:.3f} {ty:.3f} {scaled_w:.3f} {scaled_h:.3f} re S Q"
+            )
+
+            # --- Page number label ---
+            font_size = max(5.0, min(9.0, cell_h * 0.055))
+            label = str(page_idx + 1)
+            approx_label_w = len(label) * font_size * 0.52
+            label_x = tx + scaled_w / 2 - approx_label_w / 2
+
+            # Place below content if there's room in the cell gap, else inside at bottom
+            label_y = ty - font_size - 1.5
+            if label_y < cell_y + 1:
+                label_y = ty + 2.5
+
+            content_parts.append(
+                f"BT /F1 {font_size:.2f} Tf 0.2 0.2 0.2 rg "
+                f"{label_x:.3f} {label_y:.3f} Td ({label}) Tj ET"
+            )
+
     # Build the page dictionary directly in the output PDF
     content_stream = out_pdf.make_stream("\n".join(content_parts).encode("ascii"))
     page_dict = out_pdf.make_indirect(pikepdf.Dictionary(
         Type=pikepdf.Name.Page,
         MediaBox=pikepdf.Array([0, 0, paper_w, paper_h]),
-        Resources=pikepdf.Dictionary(XObject=xobjects),
+        Resources=pikepdf.Dictionary(
+            XObject=xobjects,
+            Font=pikepdf.Dictionary(F1=font_dict),
+        ),
         Contents=content_stream,
     ))
 
