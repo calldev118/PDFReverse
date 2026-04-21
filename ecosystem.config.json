@@ -1,0 +1,12 @@
+{
+  "name": "printgrid",
+  "script": "app.py",
+  "interpreter": "python3",
+  "cwd": "/home/gopi_krishna/PDFReverse",
+  "env": {
+    "PORT": "8005",
+    "SECRET_KEY": "change-me-to-a-random-secret"
+  },
+  "watch": false,
+  "autorestart": true
+}
