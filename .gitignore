@@ -5,3 +5,4 @@ __pycache__/
 *.db
 core/printgrid.db-shm
 core/printgrid.db-wal
+venv/

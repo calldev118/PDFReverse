@@ -88,6 +88,15 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/ads.txt")
+def ads_txt():
+    return (
+        "google.com, pub-4924359931236069, DIRECT, f08c47fec0942fa0\n",
+        200,
+        {"Content-Type": "text/plain; charset=utf-8"},
+    )
+
+
 @app.route("/api/process", methods=["POST"])
 def process_pdf():
     """Upload and process a PDF."""
@@ -314,7 +323,7 @@ def admin_logout():
 _schedule_cleanup()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8001))
     app.run(host="0.0.0.0", port=port)
 
 # c887379331dfe30e10a1214c7a89cf5bcc6d14c3d128cb782de37468d53e09a3

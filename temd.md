@@ -218,3 +218,12 @@ PDFReverse/
 This is the complete plan. I recommend starting with **Phase 1** — a pure logic simulation with no PDF involved, just verifying the page numbering and grid arrangement works correctly. Once that's solid, we layer on real PDF processing.
 
 Want me to begin implementing Phase 1?
+
+gunicorn --bind 127.0.0.1:8001 app:app
+
+
+
+sudo ss -ltnp | grep :8001
+sudo fuser -k 8001/tcp
+kill -9 PID_NUMBER
+./venv/bin/gunicorn -w 4 --threads 2 --timeout 120 -b 127.0.0.1:8001 app:app
