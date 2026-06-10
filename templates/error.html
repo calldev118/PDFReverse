@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ code }} — Slipgrid</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --font: 'Inter', -apple-system, sans-serif;
+            --primary: #4f46e5;
+            --bg: #f8fafc;
+            --surface: #fff;
+            --text: #0f172a;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+        body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; -webkit-font-smoothing: antialiased; padding: 24px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px 40px; width: 100%; max-width: 460px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,.06); }
+        .code { font-size: 3.2rem; font-weight: 700; color: var(--primary); line-height: 1; }
+        .msg { color: var(--text-muted); font-size: 1rem; margin: 14px 0 28px; }
+        .home { display: inline-block; padding: 12px 24px; background: var(--primary); color: #fff; border-radius: 10px; font-size: .92rem; font-weight: 600; text-decoration: none; transition: background .15s; }
+        .home:hover { background: #4338ca; }
+        .brand { margin-top: 26px; font-size: .8rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="code">{{ code }}</div>
+        <p class="msg">{{ message }}</p>
+        <a class="home" href="/">Back to Slipgrid</a>
+        <p class="brand">Slipgrid — PDF Imposition Tool</p>
+    </div>
+</body>
+</html>

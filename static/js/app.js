@@ -1,5 +1,5 @@
 /**
- * PrintGrid — Frontend Logic
+ * Slipgrid — Frontend Logic
  * Upload, grid preview with tabs, processing, and download.
  */
 (function () {

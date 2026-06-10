@@ -8,15 +8,24 @@ Manages admin accounts.
 import sqlite3
 import os
 import hashlib
+import secrets
 import threading
 from datetime import datetime, date
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "printgrid.db")
+from werkzeug.security import generate_password_hash, check_password_hash
+
+DB_PATH = os.path.join(os.path.dirname(__file__), "slipgrid.db")
 
 _local = threading.local()
 
-# Super admin cannot be deleted
-SUPER_ADMIN = "tesla"
+# Super admin cannot be deleted. Username is configurable via env so it is
+# not pinned to a single hardcoded value.
+SUPER_ADMIN = os.environ.get("SUPER_ADMIN_USERNAME", "tesla").strip().lower()
+
+
+def _is_legacy_hash(stored):
+    """True if `stored` is an old unsalted sha256 hex digest (not a werkzeug hash)."""
+    return ":" not in stored and len(stored) == 64
 
 
 def _get_conn():
@@ -59,13 +68,21 @@ def init_db():
         -- Default: service enabled
         INSERT OR IGNORE INTO settings (key, value) VALUES ('service_enabled', '1');
     """)
-    # Ensure super admin exists
+    # Ensure super admin exists. The bootstrap password comes from the
+    # environment; if unset, a strong random one is generated and printed
+    # once (never hardcoded in source).
     row = conn.execute("SELECT id FROM admins WHERE username = ?", (SUPER_ADMIN,)).fetchone()
     if not row:
-        pass_hash = hashlib.sha256("handiusr".encode()).hexdigest()
+        super_pass = os.environ.get("SUPER_ADMIN_PASSWORD")
+        if not super_pass:
+            super_pass = secrets.token_urlsafe(16)
+            print(
+                f"[slipgrid] Created super admin '{SUPER_ADMIN}' with generated "
+                f"password: {super_pass}  (set SUPER_ADMIN_PASSWORD to control this)"
+            )
         conn.execute(
             "INSERT INTO admins (username, password_hash, is_super) VALUES (?, ?, 1)",
-            (SUPER_ADMIN, pass_hash),
+            (SUPER_ADMIN, generate_password_hash(super_pass)),
         )
     conn.commit()
 
@@ -162,14 +179,33 @@ def delete_all_conversions():
 # ── Admin management ─────────────────────────────────────────────
 
 def authenticate_admin(username, password):
-    """Check admin credentials. Returns True if valid."""
+    """Check admin credentials. Returns True if valid.
+
+    Verifies against salted werkzeug hashes. Legacy unsalted sha256 hashes
+    are accepted once and transparently upgraded to a werkzeug hash on a
+    successful login.
+    """
     conn = _get_conn()
-    pass_hash = hashlib.sha256(password.encode()).hexdigest()
     row = conn.execute(
-        "SELECT id FROM admins WHERE username = ? AND password_hash = ?",
-        (username, pass_hash),
+        "SELECT id, password_hash FROM admins WHERE username = ?",
+        (username,),
     ).fetchone()
-    return row is not None
+    if not row:
+        return False
+
+    stored = row["password_hash"]
+    if _is_legacy_hash(stored):
+        ok = secrets.compare_digest(hashlib.sha256(password.encode()).hexdigest(), stored)
+        if ok:
+            # Upgrade the legacy hash in place.
+            conn.execute(
+                "UPDATE admins SET password_hash = ? WHERE id = ?",
+                (generate_password_hash(password), row["id"]),
+            )
+            conn.commit()
+        return ok
+
+    return check_password_hash(stored, password)
 
 
 def get_all_admins():
@@ -189,15 +225,14 @@ def create_admin(username, password):
         return False, "Username and password are required"
     if len(username) < 3:
         return False, "Username must be at least 3 characters"
-    if len(password) < 4:
-        return False, "Password must be at least 4 characters"
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
     existing = conn.execute("SELECT id FROM admins WHERE username = ?", (username,)).fetchone()
     if existing:
         return False, f"Admin '{username}' already exists"
-    pass_hash = hashlib.sha256(password.encode()).hexdigest()
     conn.execute(
         "INSERT INTO admins (username, password_hash, is_super) VALUES (?, ?, 0)",
-        (username, pass_hash),
+        (username, generate_password_hash(password)),
     )
     conn.commit()
     return True, f"Admin '{username}' created"

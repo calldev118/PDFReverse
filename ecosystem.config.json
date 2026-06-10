@@ -1,11 +1,12 @@
 {
-  "name": "printgrid",
-  "script": "app.py",
-  "interpreter": "python3",
-  "cwd": "/home/gopi_krishna/PDFReverse",
+  "name": "slipgrid",
+  "script": "./venv/bin/gunicorn",
+  "args": "-w 4 --threads 2 --timeout 120 -b 127.0.0.1:8011 wsgi:application",
+  "interpreter": "none",
+  "cwd": "/home/tesla_pgk/apps/PDFReverse/PDFReverse",
   "env": {
-    "PORT": "8005",
-    "SECRET_KEY": "change-me-to-a-random-secret"
+    "PORT": "8011",
+    "COOKIE_SECURE": "true"
   },
   "watch": false,
   "autorestart": true

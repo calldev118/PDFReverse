@@ -1,7 +1,7 @@
 Read [](file:///home/gopi_krishna/PDFReverse)
 
 Empty workspace. Let me lay out the full understanding and detailed plan.
-pm2 delete printgrid 2>/dev/null; pm2 start ecosystem.config.json && sleep 2 && pm2 logs printgrid --nostream --lines 10
+pm2 delete slipgrid 2>/dev/null; pm2 start ecosystem.config.json && sleep 2 && pm2 logs slipgrid --nostream --lines 10
 
 http://35.238.33.149:8005/
 ---

@@ -3,6 +3,7 @@ tmp/output/
 tmp/uploads/
 __pycache__/
 *.db
-core/printgrid.db-shm
-core/printgrid.db-wal
+*.db-shm
+*.db-wal
+.env
 venv/
